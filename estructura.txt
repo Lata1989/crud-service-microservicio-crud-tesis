@@ -1,0 +1,25 @@
+crud-service/
+│
+├── src/
+│   ├── config/
+│   │   └── db.js                # Configuración de conexión a MongoDB
+│   │
+│   ├── controllers/
+│   │   └── clienteController.js # Controladores de cliente
+│   │
+│   ├── routes/
+│   │   └── clienteRoutes.js     # Rutas para CRUD de clientes
+│   │
+│   ├── middlewares/
+│   │   └── authMiddleware.js    # Middleware de autenticación (verifica desde el API Gateway)
+│   │
+│   ├── models/
+│   │   └── clienteModel.js      # Modelo de cliente (sin mongoose, en formato JSON)
+│   │
+│   ├── app.js                   # Configuración principal de Express
+│   └── index.js                 # Punto de entrada del servidor
+│
+├── .env                         # Variables de entorno (puerto, conexión a MongoDB)
+├── .gitignore                   # Ignorar node_modules, .env, etc.
+├── package.json                 # Dependencias y scripts
+└── README.md                    # Documentación del servicio
