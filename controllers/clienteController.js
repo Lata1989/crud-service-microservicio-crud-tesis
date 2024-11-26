@@ -85,29 +85,27 @@ export const createCliente = async (req, res) => {
 };
 
 
-// Actualizar un cliente
-export const updateCliente = async (req, res) => {
+// Actualizar un cliente por DNI
+export const updateClienteByDNI = async (req, res) => {
     try {
         const db = getDB();
-        const { id } = req.params;
+        const { dni } = req.params; // DNI del cliente
         const updateFields = req.body;
 
-        // Verificar si se está actualizando el DNI
-        if (updateFields.dni) {
+        // Verificar si se está intentando cambiar el DNI a otro que ya exista
+        if (updateFields.dni && updateFields.dni !== dni) {
             const existingCliente = await db.collection('clientes').findOne({
                 dni: updateFields.dni,
-                _id: { $ne: new ObjectId(id) }, // No considerar el cliente que se está actualizando
             });
 
-            // Si existe un cliente con el mismo DNI (que no sea el mismo cliente)
             if (existingCliente) {
-                return res.status(400).json({ message: 'El DNI ya está registrado' });
+                return res.status(400).json({ message: 'El nuevo DNI ya está registrado' });
             }
         }
 
-        // Actualizar el cliente
+        // Actualizar el cliente con el DNI proporcionado
         const result = await db.collection('clientes').updateOne(
-            { _id: new ObjectId(id) },
+            { dni },
             { $set: updateFields }
         );
 
@@ -122,14 +120,14 @@ export const updateCliente = async (req, res) => {
     }
 };
 
-// Eliminar un cliente (lógico)
-export const deleteCliente = async (req, res) => {
+// Eliminar un cliente por DNI
+export const deleteClienteByDNI = async (req, res) => {
     try {
         const db = getDB();
-        const { id } = req.params;
+        const { dni } = req.params; // DNI del cliente
 
         const result = await db.collection('clientes').updateOne(
-            { _id: new ObjectId(id) },
+            { dni },
             { $set: { deletedAt: new Date() } }
         );
 
@@ -140,6 +138,39 @@ export const deleteCliente = async (req, res) => {
         res.json({ message: 'Cliente eliminado con éxito' });
     } catch (error) {
         console.error('Error al eliminar cliente:', error);
+        res.status(500).json({ message: 'Error del servidor' });
+    }
+};
+
+// Reactivar un cliente por DNI
+export const reactivateClienteByDNI = async (req, res) => {
+    try {
+        const db = getDB();
+        const { dni } = req.params;
+
+        // Buscar al cliente por DNI y verificar si está "borrado"
+        const cliente = await db.collection('clientes').findOne({ dni });
+        if (!cliente) {
+            return res.status(404).json({ message: 'Cliente no encontrado' });
+        }
+
+        if (!cliente.deletedAt) {
+            return res.status(400).json({ message: 'El cliente ya está activo' });
+        }
+
+        // Reactivar el cliente
+        const result = await db.collection('clientes').updateOne(
+            { dni },
+            { $set: { deletedAt: null } }
+        );
+
+        if (result.modifiedCount === 0) {
+            return res.status(500).json({ message: 'Error al reactivar cliente' });
+        }
+
+        res.json({ message: 'Cliente reactivado con éxito' });
+    } catch (error) {
+        console.error('Error al reactivar cliente:', error);
         res.status(500).json({ message: 'Error del servidor' });
     }
 };
