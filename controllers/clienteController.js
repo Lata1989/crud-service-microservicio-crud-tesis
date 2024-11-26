@@ -9,14 +9,14 @@ export const getClientes = async (req, res) => {
 
         const query = search
             ? {
-                  $or: [
-                      { name: { $regex: search, $options: 'i' } },
-                      { lastname: { $regex: search, $options: 'i' } },
-                      { dni: search },
-                      { cuit: search },
-                  ],
-                  deletedAt: null, // Excluir clientes "borrados"
-              }
+                $or: [
+                    { name: { $regex: search, $options: 'i' } },
+                    { lastname: { $regex: search, $options: 'i' } },
+                    { dni: search },
+                    { cuit: search },
+                ],
+                deletedAt: null, // Excluir clientes "borrados"
+            }
             : { deletedAt: null };
 
         const clientes = await db
@@ -65,6 +65,15 @@ export const searchClientesByDNI = async (req, res) => {
 export const createCliente = async (req, res) => {
     try {
         const db = getDB();
+        const { dni } = req.body;
+
+        // Verificar si el DNI ya está registrado
+        const existingCliente = await db.collection('clientes').findOne({ dni });
+        if (existingCliente) {
+            return res.status(400).json({ message: 'El DNI ya está registrado' });
+        }
+
+        // Crear el nuevo cliente
         const newCliente = { ...req.body, createdAt: new Date(), deletedAt: null };
 
         await db.collection('clientes').insertOne(newCliente);
@@ -75,6 +84,7 @@ export const createCliente = async (req, res) => {
     }
 };
 
+
 // Actualizar un cliente
 export const updateCliente = async (req, res) => {
     try {
@@ -82,6 +92,20 @@ export const updateCliente = async (req, res) => {
         const { id } = req.params;
         const updateFields = req.body;
 
+        // Verificar si se está actualizando el DNI
+        if (updateFields.dni) {
+            const existingCliente = await db.collection('clientes').findOne({
+                dni: updateFields.dni,
+                _id: { $ne: new ObjectId(id) }, // No considerar el cliente que se está actualizando
+            });
+
+            // Si existe un cliente con el mismo DNI (que no sea el mismo cliente)
+            if (existingCliente) {
+                return res.status(400).json({ message: 'El DNI ya está registrado' });
+            }
+        }
+
+        // Actualizar el cliente
         const result = await db.collection('clientes').updateOne(
             { _id: new ObjectId(id) },
             { $set: updateFields }

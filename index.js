@@ -13,6 +13,11 @@ const PORT = process.env.PORT || 5002;
 app.use(cors()); // Habilitamos CORS desde cualquier origen
 app.use(express.json());
 
+// Ruta base de prueba
+app.get('/', (req, res) => {
+    res.send('¡El microservicio de CRUD de clientes está funcionando!');
+});
+
 // Rutas
 app.use('/clientes', clienteRoutes);
 
